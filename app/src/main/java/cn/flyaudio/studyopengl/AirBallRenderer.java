@@ -14,14 +14,12 @@ import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
 import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.GL_LINES;
 import static android.opengl.GLES20.GL_POINTS;
-import static android.opengl.GLES20.GL_TRIANGLES;
+import static android.opengl.GLES20.GL_TRIANGLE_FAN;
 import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
 import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glGetAttribLocation;
-import static android.opengl.GLES20.glGetUniformLocation;
-import static android.opengl.GLES20.glUniform4f;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
 import static android.opengl.GLES20.glViewport;
@@ -31,39 +29,61 @@ import static android.opengl.GLES20.glViewport;
  */
 
 public class AirBallRenderer implements GLSurfaceView.Renderer {
-    float[] tablevertices = {
-            0f, 0f,
-            0f, 14f,
-            9f, 14f,
-            9f, 0f
-    };
     float[] tableVerticesWithTriangles = {
-            //左边三角形
-            -0.5f, -0.5f,
-            0.5f, 0.5f,
-            -0.5f, 0.5f,
-            //右边三角形
-            -0.5f, -0.5f,
-            0.5f, 0.5f,
-            0.5f, -0.5f,
+//            //左边三角形
+//            -0.5f, -0.5f,
+//            0.5f, 0.5f,
+//            -0.5f, 0.5f,
+//            //右边三角形
+//            -0.5f, -0.5f,
+//            0.5f, 0.5f,
+//            0.5f, -0.5f,
+//两个点连成直线
+//            -0.5f,0f,
+//            0.5f,0f,
+//
+//            //两个小点
+//            0f,-0.25f,
+//            0f,0.25f
+//            0f,0f,1f,1f,1f,
+//            -0.5f,-0.5f,0.7f,0.7f,0.7f,
+//            0.5f,-0.5f,0.7f,0.7f,0.7f,
+//            0.5f,0.5f,0.7f,0.7f,0.7f,
+//            -0.5f,0.5f,0.7f,0.7f,0.7f,
+//            -0.5f,-0.5f,0.7f,0.7f,0.7f,
+            -0.25f,0f,0.7f,0.7f,0.7f,
+            -0.5f,-0.5f,0.7f,0.7f,0.7f,
+            0f,-0.5f,0.7f,0.7f,0.7f,
+            0f,0.5f,0.7f,0.7f,0.7f,
+            -0.5f,0.5f,0.7f,0.7f,0.7f,
+            -0.5f,-0.5f,0.7f,0.7f,0.7f,
+
+            0f,0.25f,0.7f,0.7f,0.7f,
+            0f,-0.5f,0.7f,0.7f,0.7f,
+            0.5f,-0.5f,0.7f,0.7f,0.7f,
+            0.5f,0.5f,0.7f,0.7f,0.7f,
+            0f,0.5f,0.7f,0.7f,0.7f,
+            0f,-0.5f,0.7f,0.7f,0.7f,
 
             //两个点连成直线
-            -0.5f,0f,
-            0.5f,0f,
+            -0.5f,0f,1f,0f,0f,
+            0.5f,0f,1f,0f,0f,
 
             //两个小点
-            0f,-0.25f,
-            0f,0.25f
+            0f,-0.25f,0f,0f,1f,
+            0f,0.25f,1f,0f,0f
     };
 
     private Context mContext;
     private int program;
-    private static final String U_COLOR = "u_Color";
+    private static final String A_COLOR = "a_Color";
     private static final String A_POSITION = "a_Position";
     private static  final  int BYTES_PER_FLOAT =4;
     private static  final  int POSITION_COMPNENT_COUNT =2;
-    private int uColorLocation;
+    private static  final  int COLOR_COMPNENT_COUNT =3;
+    private int aColorLocation;
     private int aPositionLocation;
+    private static final int STRIDE = (POSITION_COMPNENT_COUNT+COLOR_COMPNENT_COUNT)*BYTES_PER_FLOAT;
     private FloatBuffer vertexData = null;
 
     private String vertexShaderSource ;
@@ -99,12 +119,19 @@ public class AirBallRenderer implements GLSurfaceView.Renderer {
             ShaderHelper.validateProgram(program);
         }
         glUseProgram(program);
-        uColorLocation = glGetUniformLocation(program,U_COLOR);
+
+        aColorLocation = glGetAttribLocation(program,A_COLOR);
         aPositionLocation = glGetAttribLocation(program,A_POSITION);
+
         vertexData.position(0);
         glVertexAttribPointer(aPositionLocation,POSITION_COMPNENT_COUNT,GL_FLOAT,
-                false,0,vertexData);
+                false,STRIDE,vertexData);
         glEnableVertexAttribArray(aPositionLocation);
+
+        vertexData.position(POSITION_COMPNENT_COUNT);
+        glVertexAttribPointer(aColorLocation,COLOR_COMPNENT_COUNT,GL_FLOAT,
+                false,STRIDE,vertexData);
+        glEnableVertexAttribArray(aColorLocation);
     }
 
     @Override
@@ -115,13 +142,10 @@ public class AirBallRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onDrawFrame(GL10 gl) {
         glClear(GL_COLOR_BUFFER_BIT);
-        glUniform4f(uColorLocation,1f,1f,1f,1f);
-        glDrawArrays(GL_TRIANGLES,0,6);
-        glUniform4f(uColorLocation,1f,0f,0f,1f);
-        glDrawArrays(GL_LINES,6,2);
-        glUniform4f(uColorLocation,0f,0f,1f,1f);
-        glDrawArrays(GL_POINTS,8,1);
-        glUniform4f(uColorLocation,1f,0f,0f,1f);
-        glDrawArrays(GL_POINTS,9,1);
+        glDrawArrays(GL_TRIANGLE_FAN,0,6);
+        glDrawArrays(GL_TRIANGLE_FAN,7,6);
+        glDrawArrays(GL_LINES,12,2);
+        glDrawArrays(GL_POINTS,14,1);
+        glDrawArrays(GL_POINTS,15,1);
     }
 }
